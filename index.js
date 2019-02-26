@@ -86,9 +86,9 @@ const helper = async (db) => {
     //     console.log(results);
     // });
 
-    // await getTenatsAndWriteToFile(db);
+    await getTenatsAndWriteToFile(db);
     // await getClientsAndWriteTofile(db);
-     await getAdminsAndWriteToFile(db);
+    //await getAdminsAndWriteToFile(db);
 
     console.log("admin list " + adminList);
     console.log("owner List global : " + owners);
@@ -157,8 +157,8 @@ async function getAdminsAndWriteToFile(db) {
     //  console.log("owner list from admin list : "+owners);
     // console.log("Owner List : " + ownerListFromFiles);
     var obj = JSON.parse(fs.readFileSync(path.join(__dirname + "/ownerList.json"), 'utf8'));
-    const ownerListFromFiles = jsonToMap( obj);
-    console.log("OwnerListFrom File " + mapToJson( ownerListFromFiles));
+    const ownerListFromFiles = jsonToMap(obj);
+    console.log("OwnerListFrom File " + mapToJson(ownerListFromFiles));
     async.each(ownerListFromFiles, async function (ownerListFromFile, callback) {
             console.log("asy " + ownerListFromFile);
 

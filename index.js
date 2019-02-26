@@ -75,19 +75,20 @@ function writeToFile(data, filename) {
 
 const tenantNames = [];
 var owners = [];
+var ownersList = new Map();
 const adminList = [];
 const helper = async (db) => {
     // await getTenatsAndWriteToFile(db);
 
     //  await Promise.all([getTenatsAndWriteToFile(db),getClientsAndWriteTofile(db)])
-    async.parallel([getTenatsAndWriteToFile(db), getClientsAndWriteTofile(db), getAdminsAndWriteToFile(db)], function (err, results) {
-        console.log(err);
-        console.log(results);
-    });
+    // async.parallel([getTenatsAndWriteToFile(db), getClientsAndWriteTofile(db), getAdminsAndWriteToFile(db)], function (err, results) {
+    //     console.log(err);
+    //     console.log(results);
+    // });
 
     // await getTenatsAndWriteToFile(db);
     // await getClientsAndWriteTofile(db);
-    // await getAdminsAndWriteToFile(db);
+     await getAdminsAndWriteToFile(db);
 
     console.log("admin list " + adminList);
     console.log("owner List global : " + owners);
@@ -98,28 +99,46 @@ async function getClientsAndWriteTofile(db) {
 
     var obj = JSON.parse(fs.readFileSync(path.join(__dirname + "/tenantList.json"), 'utf8'));
     const tenants = obj;
+
     console.log(" Tenant names " + tenants);
     async.each(tenants, async function (tenant, callback) {
             console.log("Tenant Name" + tenant);
             const clients = await findTenantOwner(db, tenant);
+            owners = [];
             clients.forEach(data => {
                 // console.log("Inside loop  " + data.owners);
-                data.owners.forEach(ow => {
-                    //  console.log(ow);
-                    owners.push(ow);
-                })
-            });
-            callback(owners);
+                if (data.owners) {
+                    data.owners.forEach(ow => {
+                        if (!owners.includes(ow)) {
+                            owners.push(ow);
+                        }
+
+                    })
+                    ownersList.set(tenant, owners);
+                }
+
+                // data.owners.forEach(ow => {
+                //     //  console.log(ow);
+                //     owners.push(ow);
+            })
+            //  });
+            if (ownersList.size === tenants.length) {
+                if (ownersList != null) {
+                    const datatowrite = mapToJson(ownersList);
+                    const writeOp = await writeToFile(datatowrite, "ownerList");
+                    console.log(writeOp);
+                }
+            }
+            callback(ownersList);
+
         },
         async function (err) {
-            console.log("Owners from async :" + owners.length + " " + owners);
+            console.log("Owners from async :" + ownersList.size + " " + owners);
 
-            console.log("owners " + owners);
-            if (owners != null) {
-                const writeOp = await writeToFile(owners, "ownerList");
-                console.log(writeOp);
-            }
+            console.log("owners " + ownersList);
+
         })
+
 }
 
 async function getTenatsAndWriteToFile(db) {
@@ -138,8 +157,8 @@ async function getAdminsAndWriteToFile(db) {
     //  console.log("owner list from admin list : "+owners);
     // console.log("Owner List : " + ownerListFromFiles);
     var obj = JSON.parse(fs.readFileSync(path.join(__dirname + "/ownerList.json"), 'utf8'));
-    const ownerListFromFiles = obj;
-    console.log("OwnerListFrom File " + ownerListFromFiles);
+    const ownerListFromFiles = jsonToMap( obj);
+    console.log("OwnerListFrom File " + mapToJson( ownerListFromFiles));
     async.each(ownerListFromFiles, async function (ownerListFromFile, callback) {
             console.log("asy " + ownerListFromFile);
 
@@ -189,4 +208,13 @@ function readFileData() {
         console.log(data);
         return data;
     })
+}
+
+
+function mapToJson(map) {
+    return JSON.stringify([...map]);
+}
+
+function jsonToMap(jsonStr) {
+    return new Map(JSON.parse(jsonStr));
 }
